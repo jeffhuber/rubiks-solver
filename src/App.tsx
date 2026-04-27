@@ -390,13 +390,25 @@ function App() {
         <button onClick={handleShare} title="Copy a link that reproduces this exact state">
           Share
         </button>
-        <span className={`status status-${solverStatus}`}>
+        <span
+          className={`status status-${solverStatus}`}
+          role="status"
+          aria-live="polite"
+        >
           Solver: {solverStatus === 'ready' ? 'ready' : 'initializing…'}
         </span>
       </section>
 
-      {shareFeedback && <p className="share-feedback">{shareFeedback}</p>}
-      {parseError && <p className="error">Image parse error: {parseError}</p>}
+      {shareFeedback && (
+        <p className="share-feedback" role="status" aria-live="polite">
+          {shareFeedback}
+        </p>
+      )}
+      {parseError && (
+        <p className="error" role="alert">
+          Image parse error: {parseError}
+        </p>
+      )}
 
       <section className="cube-area">
         <div className="cube-net">
@@ -444,7 +456,7 @@ function App() {
             {solveBusy === 'tight' ? 'Tightening…' : 'Solve (tightest)'}
           </button>
           {solveBusy === 'tight' && tightInfo && (
-            <span className="tight-progress">
+            <span className="tight-progress" role="status" aria-live="polite">
               baseline {tightInfo.baseline}, best so far {tightInfo.current}
             </span>
           )}
@@ -453,23 +465,29 @@ function App() {
               Cancel
             </button>
           )}
-          {solveError && <p className="error">{solveError.message}</p>}
+          {solveError && (
+            <p className="error" role="alert">
+              {solveError.message}
+            </p>
+          )}
         </section>
       )}
 
       {moves && moves.length > 0 && solveMode === 'tight' && tightInfo && tightInfo.baseline > tightInfo.current && (
-        <p className="tight-banner">
+        <p className="tight-banner" role="status" aria-live="polite">
           Found a {tightInfo.current}-move solution — saved {tightInfo.baseline - tightInfo.current} vs. the {tightInfo.baseline}-move baseline.
         </p>
       )}
       {moves && moves.length > 0 && solveMode === 'tight' && tightInfo && tightInfo.baseline === tightInfo.current && (
-        <p className="tight-banner muted">
+        <p className="tight-banner muted" role="status" aria-live="polite">
           Couldn't find anything shorter than {tightInfo.current} moves within {TIGHT_DEADLINE_MS / 1000}s — Kociemba's first solution was already locally optimal.
         </p>
       )}
 
       {moves && moves.length === 0 && (
-        <p className="already-solved">The cube is already solved — no moves needed.</p>
+        <p className="already-solved" role="status" aria-live="polite">
+          The cube is already solved — no moves needed.
+        </p>
       )}
 
       {moves && moves.length > 0 && (
