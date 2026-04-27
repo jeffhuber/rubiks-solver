@@ -11,12 +11,12 @@ A browser-based 3×3 Rubik's Cube solver. Upload a flat-net image of a scrambled
 1. **Get a cube state in** — three ways: click **Upload net image**, drop a net image anywhere on the page, or paste one with ⌘V. **Random scramble** generates a programmatic state for testing. **Share** copies a URL that reproduces the exact current state.
 2. The CV pipeline crops the cross, samples each sticker, and snaps every color via per-image calibration: it finds the globally optimal 6-way assignment of the center stickers to the WCA palette, then classifies every other sticker against those calibrated centers (handles palette drift like Ruwix's yellow-shifted orange).
 3. The detected state appears in an editable cube net — click any sticker to fix a wrong color before solving. Any of the 24 rotational orientations is accepted; the centers themselves define which face is which.
-4. Click **Solve** for an instant ≤22-move Kociemba solution, or **Solve (tightest)** to spend up to ~9 seconds searching for a shorter one (typically 20 moves — God's Number). A lifetime counter tracks how many moves you've saved across all tight solves.
+4. Click **Solve** for an instant Kociemba solution (typically 20–22 moves; cubes 1–4 moves from solved get the optimal short answer), or **Solve (tightest)** to spend up to ~9 seconds searching for a shorter one (typically 20 moves — God's Number). A lifetime counter tracks how many moves you've saved across all tight solves.
 5. Step through the solution one move at a time, or hit **▶ Play** for auto-advance with slow/normal/fast speeds. The 2D net updates the highlighted face and the 3D cube animates the matching face rotation. Drag the 3D cube to orbit it.
 
 ## How it works
 
-- **Solver:** [`cubejs`](https://www.npmjs.com/package/cubejs) — a JS port of Kociemba's two-phase algorithm. Returns the first solution it finds (typically 20-22 moves) in milliseconds after a one-time ~3-second pruning-table init. The optional **Solve (tightest)** button iteratively re-runs cubejs with progressively tighter `maxDepth` bounds (down to 20, God's Number) for up to ~9s, recovering whatever shortest solution is found before the budget runs out.
+- **Solver:** [`cubejs`](https://www.npmjs.com/package/cubejs) — a JS port of Kociemba's two-phase algorithm. Returns the first solution it finds (typically 20-22 moves) in milliseconds after a one-time ~3-second pruning-table init. Before the default solve, the wrapper probes `cube.solve(k)` for k=1..4 to catch cubes that are 1–4 moves from solved (cubejs's default `solve()` would otherwise return a 9–12 move sandwich for those). The optional **Solve (tightest)** button iteratively re-runs cubejs with progressively tighter `maxDepth` bounds (down to 20, God's Number) for up to ~9s, recovering whatever shortest solution is found before the budget runs out.
 - **Worker isolation:** the solver runs in a dedicated Web Worker ([src/solver.worker.ts](src/solver.worker.ts)) with a Promise-based main-thread proxy ([src/solver.ts](src/solver.ts)). cubejs's `solve()` calls can take seconds-to-minutes on tight depths and can't be preempted, so the worker is hard-`terminate()`-ed if it blows past the deadline; the latest progress result is recovered via the onProgress channel. Re-init costs ~3s once, hidden by the next idle window.
 - **Cube model** ([src/cube.ts](src/cube.ts)): the cube state is a 54-character facelet string in `URFDLB` face order. The `PLACEMENTS` table maps each sticker index to its `(row, col)` on the unfolded cross — used by both the renderer and the parser, so the two are guaranteed to agree. The parallel `PLACEMENTS_3D` ([src/cubies.ts](src/cubies.ts)) maps each sticker to its cubie position and outward face direction in 3D world coordinates.
 - **2D Renderer** ([src/CubeNet.tsx](src/CubeNet.tsx), [src/render.ts](src/render.ts)): SVG component for the UI, plus a pure RGBA-buffer renderer used as a deterministic test fixture for the parser.
@@ -31,7 +31,7 @@ The parser round-trips 50 random scrambles at 100% sticker accuracy against the 
 ```sh
 npm install
 npm run dev      # http://localhost:5173/rubiks-solver/
-npm test         # vitest, ~5s
+npm test         # vitest, ~7s
 npm run build    # production bundle
 ```
 
